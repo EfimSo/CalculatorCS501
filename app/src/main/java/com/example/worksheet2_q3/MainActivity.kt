@@ -1,6 +1,7 @@
 package com.example.worksheet2_q3
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,6 +21,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -52,6 +55,7 @@ fun Calculator(modifier: Modifier = Modifier) {
         { it ->
             if (it.isEmpty()) {
                 fieldText = ""
+                errorText = ""      // C button clears error message
             } else if (it.matches(pattern)) {
                 val lastChar = it.last()
                 when {
@@ -79,18 +83,27 @@ fun Calculator(modifier: Modifier = Modifier) {
                             } else {
                                 // Invalid number entered
                                 fieldText = ""
+                                errorText = "Error: Invalid Number Entered"
                             }
                         } else {
                             // Perform the operation with the existing operand and operator
                             val operand2 = fieldText.toFloatOrNull()
                             if (operand2 != null) {
-                                operand1 = executeOperation(operator, operand1!!, operand2)
+                                operand1 = executeOperation(operator, operand1!!, operand2,
+                                    handleErrorText = {text -> errorText = text})
+                                if (operand1 == null) // Computation error
+                                {
+                                    fieldText = ""
+                                }
+                                else{
+                                    fieldText = operand1.toString()
+                                    operand1 = null
+                                }
                                 operator = ""
-                                fieldText = operand1.toString()
-                                operand1 = null
                             } else {
                                 // Invalid second operand
                                 fieldText = ""
+                                errorText = "Error: Invalid Second Operand"
                             }
                         }
                     }
@@ -100,20 +113,28 @@ fun Calculator(modifier: Modifier = Modifier) {
                         if (operand1 != null && operator.isNotEmpty()) {
                             val operand2 = fieldText.toFloatOrNull()
                             if (operand2 != null) {
-                                operand1 = executeOperation(operator, operand1!!, operand2)
-                                fieldText = operand1.toString()
+                                operand1 = executeOperation(operator, operand1!!, operand2,
+                                    handleErrorText = {text -> errorText = text})
+                                if (operand1 == null) // Computation error
+                                {
+                                    fieldText = ""
+                                }
+                                else{
+                                    fieldText = operand1.toString()
+                                    operand1 = null
+                                }
                                 operator = ""
-                                operand1 = null
                             } else {
                                 // Invalid second operand
                                 fieldText = ""
+                                errorText = "Error: Invalid Second Operand"
                             }
                         }
                     }
 
                     lastChar == 's' -> {
                         // Sqrt operator, perform sqrt on the current operand
-                        val currentOperand = fieldText.dropLast(1).toFloatOrNull()
+                        val currentOperand = it.dropLast(1).toFloatOrNull()
                         if (currentOperand != null) {
                             operand1 = kotlin.math.sqrt(currentOperand)
                             fieldText = operand1.toString()
@@ -122,17 +143,19 @@ fun Calculator(modifier: Modifier = Modifier) {
                         } else {
                             // Invalid operand for sqrt
                             fieldText = ""
+                            errorText = "Error: Invalid Number Entered"
                         }
                     }
 
                     else -> {
-                        // Ignore any other characters
+                        errorText = "Invalid Character Entered"
+                        fieldText = ""
                     }
                 }
             }
         }
 
-    Column(modifier = Modifier.fillMaxSize())
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally)
     {
         Spacer(modifier = Modifier.height(20.dp))
         OutlinedTextField(
@@ -141,11 +164,16 @@ fun Calculator(modifier: Modifier = Modifier) {
                 OnFieldTextChange(it)
             },
             textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End, fontSize = 20.sp),
-            modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp).height(60.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp)
+                .height(60.dp)
         )
         CalculatorButtonLayout(fieldText, onFieldTextChange = {
             OnFieldTextChange(it)
         })
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(errorText, fontSize = 20.sp, color = Color.Red, textAlign = TextAlign.Center,)
     }
 
 }
@@ -188,7 +216,7 @@ fun CalculatorButtonLayout(fieldText: String, onFieldTextChange: (String) -> Uni
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -231,8 +259,9 @@ fun CalculatorButtonLayout(fieldText: String, onFieldTextChange: (String) -> Uni
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            CalculatorButton("0", onClick = {handleDigit(0)}, modifier = Modifier.weight(2f))
+            CalculatorButton("0", onClick = {handleDigit(0)}, buttonModifier)
             CalculatorButton(".", onClick = {handleOperator(".")}, buttonModifier)
+            CalculatorButton("C", onClick = {onFieldTextChange("")}, buttonModifier)
             CalculatorButton("=", onClick = {handleOperator("=")}, modifier = Modifier.weight(2f))
         }
     }
@@ -240,28 +269,25 @@ fun CalculatorButtonLayout(fieldText: String, onFieldTextChange: (String) -> Uni
 
 
 
-fun executeOperation(operator: String, number1: Float, number2: Float): Float? {
+fun executeOperation(operator: String, number1: Float, number2: Float, handleErrorText: (String) -> Unit): Float? {
 
     // Check for valid operator
-    return when (operator) {
-        "+" -> (number1 + number2)
-        "-" -> (number1 - number2)
-        "*" -> (number1 * number2)
+    when (operator) {
+        "+" -> return (number1 + number2)
+        "-" -> return (number1 - number2)
+        "*" -> return(number1 * number2)
         "/" -> {
             if (number2 == 0f) {
-                null
+                handleErrorText("Error: Division by zero is undefined")
+                return null
             } else {
-                (number1 / number2)
+                return (number1 / number2)
             }
         }
-        "%" -> {
-            if (number2 == 0f) {
-                null
-            } else {
-                (number1 % number2)
-            }
+        else -> {
+            handleErrorText("Error: Unknown operator")
+            return null
         }
-        else -> null
     }
 }
 
