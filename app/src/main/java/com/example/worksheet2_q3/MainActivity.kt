@@ -59,12 +59,10 @@ fun Calculator(modifier: Modifier = Modifier) {
                 val lastChar = it.last()
                 when {
                     lastChar.isDigit() -> {
-                        // Entering the first operand or continuing an operand
                         fieldText = it
                     }
 
                     lastChar == '.' -> {
-                        // Handle dot, ensuring only one dot per number
                         val textBeforeLastChar = it.dropLast(1)
                         if (!textBeforeLastChar.contains('.')) {
                             fieldText = it
@@ -72,20 +70,16 @@ fun Calculator(modifier: Modifier = Modifier) {
                     }
 
                     lastChar in listOf('+', '-', '*', '/') -> {
-                        // Operator entered
                         if (operand1 == null) {
-                            // Store the first operand and operator
                             operand1 = fieldText.toFloatOrNull()
                             if (operand1 != null) {
                                 operator = lastChar.toString()
                                 fieldText = ""
                             } else {
-                                // Invalid number entered
                                 fieldText = ""
                                 errorText = "Error: Invalid Number Entered"
                             }
                         } else {
-                            // Perform the operation with the existing operand and operator
                             val operand2 = fieldText.toFloatOrNull()
                             if (operand2 != null) {
                                 operand1 = executeOperation(operator, operand1!!, operand2,
@@ -100,7 +94,6 @@ fun Calculator(modifier: Modifier = Modifier) {
                                 }
                                 operator = ""
                             } else {
-                                // Invalid second operand
                                 fieldText = ""
                                 errorText = "Error: Invalid Second Operand"
                             }
@@ -108,7 +101,6 @@ fun Calculator(modifier: Modifier = Modifier) {
                     }
 
                     lastChar == '=' -> {
-                        // Equals operator pressed, perform the calculation
                         if (operand1 != null && operator.isNotEmpty()) {
                             val operand2 = fieldText.toFloatOrNull()
                             if (operand2 != null) {
@@ -124,7 +116,6 @@ fun Calculator(modifier: Modifier = Modifier) {
                                 }
                                 operator = ""
                             } else {
-                                // Invalid second operand
                                 fieldText = ""
                                 errorText = "Error: Invalid Second Operand"
                             }
@@ -132,7 +123,6 @@ fun Calculator(modifier: Modifier = Modifier) {
                     }
 
                     lastChar == 's' -> {
-                        // Sqrt operator, perform sqrt on the current operand
                         val currentOperand = it.dropLast(1).toFloatOrNull()
                         if (currentOperand != null) {
                             operand1 = kotlin.math.sqrt(currentOperand)
@@ -140,7 +130,6 @@ fun Calculator(modifier: Modifier = Modifier) {
                             operator = ""
                             operand1 = null
                         } else {
-                            // Invalid operand for sqrt
                             fieldText = ""
                             errorText = "Error: Invalid Number Entered"
                         }
@@ -253,7 +242,6 @@ fun CalculatorButtonLayout(fieldText: String, onFieldTextChange: (String) -> Uni
             CalculatorButton("sqrt", onClick = {handleOperator("s")}, modifier = Modifier.weight(2f))
         }
 
-        // Fourth Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -270,7 +258,6 @@ fun CalculatorButtonLayout(fieldText: String, onFieldTextChange: (String) -> Uni
 
 fun executeOperation(operator: String, number1: Float, number2: Float, handleErrorText: (String) -> Unit): Float? {
 
-    // Check for valid operator
     when (operator) {
         "+" -> return (number1 + number2)
         "-" -> return (number1 - number2)
