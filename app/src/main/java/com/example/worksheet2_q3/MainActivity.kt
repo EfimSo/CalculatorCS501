@@ -256,6 +256,7 @@ fun CalculatorButtonLayout(fieldText: String, onFieldTextChange: (String) -> Uni
 
 
 
+
 fun executeOperation(operator: String, number1: Float, number2: Float, handleErrorText: (String) -> Unit): Float? {
 
     when (operator) {
